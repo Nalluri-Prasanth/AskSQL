@@ -1,7 +1,10 @@
-import unittest
-from inference import SQLGenerator
-from database import execute_query, init_database
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import unittest
+from src.inference import SQLGenerator
+from src.database import execute_query, init_database
 
 class TestTextToSQL(unittest.TestCase):
     @classmethod
@@ -24,8 +27,8 @@ class TestTextToSQL(unittest.TestCase):
         self.assertIn("SELECT", sql.upper())
 
     def test_db_execution(self):
-        # Ensure DB has data (dummy data puts something in table_0)
-        sql = "SELECT * FROM \"table_0\""
+        # Ensure DB has data (table is 'anime')
+        sql = "SELECT * FROM \"anime\" LIMIT 1"
         df, err = execute_query(sql)
         self.assertIsNone(err)
         self.assertFalse(df.empty)
