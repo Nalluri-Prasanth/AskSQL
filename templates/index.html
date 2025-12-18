@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AskSQL Anime Search</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; color: #333; margin: 0; padding: 20px; }
+        .container { max_width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        .section { margin-bottom: 30px; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #34495e; }
+        
+        /* Table Styles */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95em; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: 600; color: #2c3e50; }
+        tr:hover { background-color: #f1f1f1; }
+        
+        /* Input Area */
+        .search-box { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 20px 0; }
+        input[type="text"] { width: 70%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; transition: border 0.3s; }
+        input[type="text"]:focus { border-color: #3498db; outline: none; }
+        button { padding: 12px 25px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        
+        /* Results */
+        .result-box { background: #fafafa; padding: 15px; border-radius: 4px; border: 1px solid #eee; min-height: 100px; }
+        .sql-code { background: #2d3436; color: #dfe6e9; padding: 10px; border-radius: 4px; font-family: monospace; margin-bottom: 15px; }
+        .error-msg { color: #e74c3c; padding: 10px; background: #fadbd8; border-radius: 4px; }
+        
+        .loading { text-align: center; display: none; margin: 10px; font-style: italic; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🤖 AskSQL: Anime Data Assistant</h1>
+    
+    <div class="section">
+        <div class="search-box">
+            <input type="text" id="question" placeholder="Ask a question about the anime dataset (e.g., 'List top 5 rated anime')" />
+            <button onclick="submitQuery()" id="btn-submit">Generate SQL</button>
+        </div>
+        <div class="loading" id="loading">Thinking...</div>
+    </div>
+
+    <div class="section" id="results-section" style="display:none;">
+        <h2>Generated Query</h2>
+        <div id="sql-output" class="sql-code"></div>
+        
+        <h2>Results</h2>
+        <div id="result-output" class="table-container"></div>
+    </div>
+
+    <div class="section">
+        <h2>Dataset Preview (First 5 Rows)</h2>
+        <div class="table-container">
+            {{ preview_html | safe }}
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>Schema Information</h2>
+        <div class="table-container">
+            <table class="table">
+                <thead><tr><th>Column</th><th>Type</th></tr></thead>
+                <tbody>
+                {% for h, t in zip(headers, types) %}
+                    <tr><td>{{ h }}</td><td>{{ t }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function submitQuery() {
+        const question = document.getElementById('question').value;
+        if (!question) return;
+
+        const btn = document.getElementById('btn-submit');
+        const loading = document.getElementById('loading');
+        const resultsSection = document.getElementById('results-section');
+        const sqlOutput = document.getElementById('sql-output');
+        const resultOutput = document.getElementById('result-output');
+
+        btn.disabled = true;
+        loading.style.display = 'block';
+        resultsSection.style.display = 'none';
+        sqlOutput.innerHTML = '';
+        resultOutput.innerHTML = '';
+
+        try {
+            const response = await fetch('/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+            
+            const data = await response.json();
+            
+            resultsSection.style.display = 'block';
+            
+            if (data.error) {
+                if (data.sql) {
+                     sqlOutput.innerText = data.sql; // Show SQL even if there is an error
+                }
+                resultOutput.innerHTML = `<div class="error-msg">Error: ${data.error}</div>`;
+            } else {
+                sqlOutput.innerText = data.sql;
+                resultOutput.innerHTML = data.result_html;
+            }
+
+        } catch (e) {
+            resultsSection.style.display = 'block';
+            resultOutput.innerHTML = `<div class="error-msg">System Error: ${e}</div>`;
+        } finally {
+            btn.disabled = false;
+            loading.style.display = 'none';
+        }
+    }
+    
+    // Allow Enter key
+    document.getElementById("question").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") {
+            submitQuery();
+        }
+    });
+</script>
+
+</body>
+</html>
