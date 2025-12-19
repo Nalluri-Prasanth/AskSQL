@@ -12,6 +12,7 @@ The system features a **Flask-based web interface** for real-time interaction, a
 *   **Advanced Model Fine-tuning**: Uses **T5-small** with **LoRA** (Low-Rank Adaptation) via the `peft` library for efficient parameter-efficient training.
 *   **Synthetic Data Generation**: A custom pipeline creates diverse, schema-aware training examples to handle various SQL patterns (filtering, sorting, aggregations).
 *   **Interactive Web UI**: A clean, responsive web interface built with **Flask** and **Bootstrap** to visualize queries and results.
+*   **Jupyter Notebook Demo**: Includes `demo.ipynb` for step-by-step inference, evaluation, and demonstration of the system.
 *   **Schema Awareness**: Implementation includes schema linking strategies to improve column name prediction accuracy.
 
 ## Dataset
@@ -65,7 +66,15 @@ python scripts/train_model.py
 ```
 *Note: Training parameters (epochs, batch size) can be adjusted in the script.*
 
-### 3. Run the Web Application
+### 3. Interactive Demo Notebook
+For a step-by-step walkthrough of the entire pipeline (loading data, training, and inference), use the provided Jupyter Notebook.
+
+1.  Open `demo.ipynb` in [VS Code](https://code.visualstudio.com/) or Jupyter Lab.
+2.  Run the cells sequentially.
+3.  **Section 4** provides an interactive loop to ask questions continuously.
+4.  **Section 5** contains built-in test cases (Retrieval, Filtering, Ranking).
+
+### 4. Run the Web Application
 Start the Flask server to interact with the system.
 
 ```bash
