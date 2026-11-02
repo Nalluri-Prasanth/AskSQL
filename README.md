@@ -1,5 +1,9 @@
 # AskSQL: Anime Database Query System
 
+## Documentation
+
+Read the [complete project report](docs/PROJECT_REPORT.md) for the architecture, dataset schema, installation, training, API usage, testing, limitations, and troubleshooting. The report follows the supplied academic assignment template.
+
 ## Project Overview
 
 This project implements a sophisticated **Natural Language to SQL (Text-to-SQL)** system designed to query an anime database. By fine-tuning a T5-small transformer model, the system translates natural language user questions (e.g., "What are the top 5 rated action anime?") into executable SQL queries.
@@ -19,7 +23,7 @@ The system features a **Flask-based web interface** for real-time interaction, a
 
 The project uses a comprehensive dataset of anime information.
 *   **Source Data**: [Kaggle Anime Rating Dataset](https://www.kaggle.com/datasets/vishnujg/anime-rating)
-*   **Local File**: The project uses a processed version named `data/animenew.csv` which is automatically loaded into a local SQLite database (`project_db.sqlite`) upon initialization.
+*   **Local File**: The project uses a processed version named `data/animenew.csv` which is loaded into a local SQLite database (`project_db.sqlite`) by the database initializer or on first server startup.
 
 ## Technical Architecture
 
@@ -53,13 +57,16 @@ The project uses a comprehensive dataset of anime information.
 The system requires `data/animenew.csv`. To initialize the SQLite database and generate synthetic training data:
 
 ```bash
-# Initialize DB and generate training pairs
+# Initialize the database
+python -m src.database
+
+# Generate training pairs
 python scripts/generate_synthetic.py
 ```
 This script acts as the data engine, producing `data/train_processed.csv` and `data/dev_processed.csv`.
 
 ### 2. Train the Model (Fine-Tuning)
-Train the T5 model using the generated data. This script applies LoRA configuration and saves the best model to `models/`.
+Train the T5 model using the generated data. This script applies LoRA configuration and saves the final merged model to `models/avgs_t5_wikisql`.
 
 ```bash
 python scripts/train_model.py
