@@ -390,7 +390,3 @@ python scripts/train_model.py
 python scripts/test_project.py
 python server.py
 ```
-
-### D Template correspondence
-
-This report follows the supplied assignment report organization: cover details, contents, lists of tables and figures, abstract, introduction, setup and execution sections, discussion, conclusion, acknowledgments, references, and appendix. Section topics describe AskSQL. GitHub anchors replace printed page numbers, and the architecture diagram replaces unrelated assignment screenshots.

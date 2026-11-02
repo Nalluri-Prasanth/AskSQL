@@ -2,7 +2,7 @@
 
 ## Documentation
 
-Read the [complete project report](docs/PROJECT_REPORT.md) for the architecture, dataset schema, installation, training, API usage, testing, limitations, and troubleshooting. The report follows the supplied academic assignment template.
+Read the [complete project report](docs/PROJECT_REPORT.md) for the architecture, dataset schema, installation, training, API usage, testing, limitations, and troubleshooting.
 
 ## Project Overview
 
