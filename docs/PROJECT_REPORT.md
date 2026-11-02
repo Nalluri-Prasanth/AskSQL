@@ -1,8 +1,7 @@
 # AskSQL Project Report
 
 **Anime Database Query System**  
-**Author:** Prasanth Nalluri  
-**Date:** November 2, 2026  
+**Author:** Prasanth Nalluri
 **Repository:** [Nalluri-Prasanth/AskSQL](https://github.com/Nalluri-Prasanth/AskSQL)  
 **Implementation reviewed:** `5cf05f7ed4295137684eea92ef24ab559ee34b45`
 
