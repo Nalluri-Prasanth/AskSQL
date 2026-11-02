@@ -221,6 +221,13 @@ Training merges LoRA weights into the base model before saving the final model a
 
 ## VI Program Execution and Usage
 
+### Hosted demonstration
+
+[Open the live AskSQL application](https://contrast-adjacent-announced-triple.trycloudflare.com). Enter a question such as **List top 5 rated anime** and select **Run Query**. The application displays the generated SQL and its results together.
+
+The hosted demonstration uses the pretrained text-to-SQL checkpoint. It runs through an HTTPS tunnel to a private server, with read-only database access, database resets disabled, and a maximum of 500 result rows per query. It depends on the server staying online; the public address may change after a tunnel restart. These settings describe the hosted demonstration and differ from the repository's default local development configuration.
+
+
 ### 1 Start the application
 
 ```bash

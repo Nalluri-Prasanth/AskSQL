@@ -1,5 +1,11 @@
 # AskSQL: Anime Database Query System
 
+## Live Demo
+
+[Open AskSQL](https://contrast-adjacent-announced-triple.trycloudflare.com) to ask questions and view generated SQL with query results.
+
+The demo runs on a private server through an HTTPS tunnel. Availability depends on the server staying online, and the demo address may change when the tunnel restarts. Results are limited to 500 rows per query.
+
 ## Documentation
 
 Read the [complete project report](docs/PROJECT_REPORT.md) for the architecture, dataset schema, installation, training, API usage, testing, limitations, and troubleshooting.
