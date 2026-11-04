@@ -1,131 +1,101 @@
-# AskSQL: Anime Database Query System
+# AskSQL: Natural Language Queries over an Anime Database
 
-## Live Demo
+AskSQL turns plain-English questions into SQL, runs the query against a local SQLite database, and shows both the generated SQL and the results in a web page. It combines a fine-tunable **T5-small** text-to-SQL model with a few deterministic rules for common question shapes.
 
-[Open AskSQL](https://contrast-adjacent-announced-triple.trycloudflare.com) to ask questions and view generated SQL with query results.
+**Live demo:** [Open AskSQL](https://contrast-adjacent-announced-triple.trycloudflare.com). The demo runs on a private server behind an HTTPS tunnel, so it is only available while that server is online and the address can change when the tunnel restarts. Results are limited to 500 rows.
 
-The demo runs on a private server through an HTTPS tunnel. Availability depends on the server staying online, and the demo address may change when the tunnel restarts. Results are limited to 500 rows per query.
+## How it works
 
-## Documentation
+```mermaid
+flowchart LR
+    Q[Question in the browser] --> S[Flask server]
+    S --> R{Known rule?}
+    R -->|yes| SQL[Rule-built SQL]
+    R -->|no| M[T5 model + table schema]
+    M --> SQL
+    SQL --> DB[(SQLite: anime)]
+    DB --> OUT[SQL and result table]
+```
 
-Read the [complete project report](docs/PROJECT_REPORT.md) for the architecture, dataset schema, installation, training, API usage, testing, limitations, and troubleshooting.
+| Part | File | Role |
+|---|---|---|
+| Web app | `server.py`, `templates/index.html` | Serves the page and the `/query` API |
+| Database | `src/database.py` | Builds SQLite from the CSV and runs queries |
+| Inference | `src/inference.py` | Loads the model, applies rules, generates and cleans SQL |
+| Data generation | `scripts/generate_synthetic.py` | Creates question/SQL training pairs for the anime table |
+| Training | `scripts/train_model.py` | LoRA fine-tuning of T5-small, merged into a single model |
+| Tests | `scripts/test_project.py` | Smoke tests for generation and the database |
+| Notebook | `demo.ipynb` | Step-by-step walkthrough of the pipeline |
 
-## Project Overview
+## Quick start
 
-This project implements a sophisticated **Natural Language to SQL (Text-to-SQL)** system designed to query an anime database. By fine-tuning a T5-small transformer model, the system translates natural language user questions (e.g., "What are the top 5 rated action anime?") into executable SQL queries.
+Python 3.10 or newer is recommended. The first run downloads the base model (`cssupport/t5-small-awesome-text-to-sql`) from Hugging Face, so it needs internet access.
 
-The system features a **Flask-based web interface** for real-time interaction, a robust **synthetic data generation pipeline**, and efficient **LoRA (Low-Rank Adaptation)** fine-tuning to ensure high performance with minimal computational resources.
+```bash
+git clone https://github.com/Nalluri-Prasanth/AskSQL.git
+cd AskSQL
+python -m venv .venv
+source .venv/bin/activate        # Windows: .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 
-## Key Features
+python -m src.database           # build project_db.sqlite from data/animenew.csv
+python server.py                 # http://127.0.0.1:5000
+```
 
-*   **Natural Language Interface**: Users can query the database using everyday English.
-*   **Advanced Model Fine-tuning**: Uses **T5-small** with **LoRA** (Low-Rank Adaptation) via the `peft` library for efficient parameter-efficient training.
-*   **Synthetic Data Generation**: A custom pipeline creates diverse, schema-aware training examples to handle various SQL patterns (filtering, sorting, aggregations).
-*   **Interactive Web UI**: A clean, responsive web interface built with **Flask** and **Bootstrap** to visualize queries and results.
-*   **Jupyter Notebook Demo**: Includes `demo.ipynb` for step-by-step inference, evaluation, and demonstration of the system.
-*   **Schema Awareness**: Implementation includes schema linking strategies to improve column name prediction accuracy.
+Try questions such as:
+
+* *List top 5 rated anime*
+* *Show top 3 popular anime*
+* *What is the story of One Piece?*
+* *Show me action movies with rating above 8*
+
+## Optional: fine-tune the model
+
+```bash
+python scripts/generate_synthetic.py    # writes data/train_processed.csv and data/dev_processed.csv
+python scripts/train_model.py           # saves the merged model to models/avgs_t5_wikisql
+python scripts/test_project.py          # smoke tests
+```
+
+When `models/avgs_t5_wikisql` exists the server uses it; otherwise it falls back to the base checkpoint. The generated data, trained model and database file are ignored by Git.
 
 ## Dataset
 
-The project uses a comprehensive dataset of anime information.
-*   **Source Data**: [Kaggle Anime Rating Dataset](https://www.kaggle.com/datasets/vishnujg/anime-rating)
-*   **Local File**: The project uses a processed version named `data/animenew.csv` which is loaded into a local SQLite database (`project_db.sqlite`) by the database initializer or on first server startup.
+[`data/animenew.csv`](data/animenew.csv) holds 14,578 anime with 18 columns (title, media type, episodes, years, season, description, studios, tags, content warnings, audience counts, rating and votes). It is based on the [Kaggle Anime Rating dataset](https://www.kaggle.com/datasets/vishnujg/anime-rating); confirm its licence before redistributing it. The full column list is in the [project report](docs/PROJECT_REPORT.md#iii-dataset-and-database).
 
-## Technical Architecture
+## API
 
-*   **Model**: Google's T5-small (Text-to-Text Transfer Transformer).
-*   **Fine-tuning**: PEFT (Parameter-Efficient Fine-Tuning) with LoRA.
-*   **Backend**: Python Flask Server.
-*   **Database**: SQLite.
-*   **Frontend**: HTML/CSS/JavaScript (Jinja2 Templates).
-
-## Installation
-
-1.  **Clone the Repository** (if applicable)
-
-2.  **Create Custom Environment**
-    It is recommended to use a virtual environment.
-    ```bash
-    python -m venv venv
-    .\venv\Scripts\activate  # Windows
-    # source venv/bin/activate # Mac/Linux
-    ```
-
-3.  **Install Dependencies**
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *Core dependencies: `torch`, `transformers`, `peft`, `flask`, `pandas`.*
-
-## Usage
-
-### 1. Initialize Database & Prepare Data
-The system requires `data/animenew.csv`. To initialize the SQLite database and generate synthetic training data:
+| Method and path | Body | Response |
+|---|---|---|
+| `GET /` | none | Web interface with schema and a five-row preview |
+| `POST /query` | `{"question": "..."}` | `{"sql": "...", "result_html": "..."}` or `{"sql": "...", "error": "..."}` |
+| `POST /init_db` | none | Rebuilds the database from the CSV (deletes local changes) |
 
 ```bash
-# Initialize the database
-python -m src.database
-
-# Generate training pairs
-python scripts/generate_synthetic.py
+curl -X POST http://127.0.0.1:5000/query -H "Content-Type: application/json" -d '{"question":"List top 5 rated anime"}'
 ```
-This script acts as the data engine, producing `data/train_processed.csv` and `data/dev_processed.csv`.
 
-### 2. Train the Model (Fine-Tuning)
-Train the T5 model using the generated data. This script applies LoRA configuration and saves the final merged model to `models/avgs_t5_wikisql`.
+## Limitations
 
-```bash
-python scripts/train_model.py
-```
-*Note: Training parameters (epochs, batch size) can be adjusted in the script.*
+This is a local prototype, not a production service. Generated SQL is executed without a read-only connection or query allow-list, the server runs in Flask debug mode with no authentication, and no accuracy benchmark is published. The synthetic dev set overlaps the training set, so it is not an independent test. Run it locally or behind access controls, and read the full list in [Discussion](docs/PROJECT_REPORT.md#viii-discussion).
 
-### 3. Interactive Demo Notebook
-For a step-by-step walkthrough of the entire pipeline (loading data, training, and inference), use the provided Jupyter Notebook.
+## Documentation
 
-1.  Open `demo.ipynb` in [VS Code](https://code.visualstudio.com/) or Jupyter Lab.
-2.  Run the cells sequentially.
-3.  **Section 4** provides an interactive loop to ask questions continuously.
-4.  **Section 5** contains built-in test cases (Retrieval, Filtering, Ranking).
+The [project report](docs/PROJECT_REPORT.md) covers the architecture, dataset schema, installation, training configuration, usage, testing, limitations and troubleshooting.
 
-### 4. Run the Web Application
-Start the Flask server to interact with the system.
-
-```bash
-python server.py
-```
-*   Open your browser to: [http://127.0.0.1:5000](http://127.0.0.1:5000)
-*   Enter questions like:
-    *   *"List top 5 rated anime"*
-    *   *"How many anime have usage > 1000?"*
-    *   *"Show me action movies with rating above 8"*
-
-## Project Structure
+## Repository layout
 
 ```text
-├── data/
-│   ├── animenew.csv            # Raw source data
-│   ├── train_processed.csv     # Generated training data
-│   └── dev_processed.csv       # Generated development data
-├── models/                     # Saved model artifacts (after training)
-├── scripts/
-│   ├── generate_synthetic.py   # Data generation pipeline
-│   ├── train_model.py          # T5 + LoRA training script
-│   ├── preprocess.py           # Utility for data formatting
-│   └── test_project.py         # Unit tests
-├── src/
-│   ├── database.py             # DB connection & initialization logic
-│   └── inference.py            # Model loading & SQL generation logic
-├── templates/
-│   └── index.html              # Web interface template
-├── server.py                   # Main Flask application entry point
-├── project_db.sqlite           # Local SQLite database (auto-generated)
-└── requirements.txt            # Python dependencies
+├── data/animenew.csv           # source dataset
+├── docs/PROJECT_REPORT.md      # full project report
+├── scripts/                    # data generation, training, tests
+├── src/                        # database and inference modules
+├── templates/index.html        # web interface
+├── demo.ipynb                  # notebook walkthrough
+├── server.py                   # Flask application
+└── requirements.txt
 ```
 
-## Testing
+## Author
 
-To verify the system components (inference engine and database connection) are working correctly:
-
-```bash
-python scripts/test_project.py
-```
+Prasanth Nalluri ([@Nalluri-Prasanth](https://github.com/Nalluri-Prasanth))

@@ -9,3 +9,6 @@ models/
 logs/
 data/*_processed.csv
 data/*.jsonl
+.venv/
+.vscode/
+.idea/

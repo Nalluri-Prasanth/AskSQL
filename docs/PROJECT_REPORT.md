@@ -3,7 +3,6 @@
 **Anime Database Query System**  
 **Author:** Prasanth Nalluri
 **Repository:** [Nalluri-Prasanth/AskSQL](https://github.com/Nalluri-Prasanth/AskSQL)  
-**Implementation reviewed:** `5cf05f7ed4295137684eea92ef24ab559ee34b45`
 
 | Name | Contribution |
 | --- | --- |
@@ -57,7 +56,7 @@ Relational databases require users to express requests in SQL. AskSQL explores a
 
 ### 3 Scope
 
-The active application targets the `anime` table. It is a local demonstration and development project. General database connections, multi-table joins, authentication, and production deployment controls are not implemented. Legacy WikiSQL preprocessing is retained separately from the anime workflow.
+The active application targets the `anime` table. It is a local demonstration and development project. General database connections, multi-table joins, authentication, and production deployment controls are not implemented.
 
 ## II System Architecture
 
@@ -68,7 +67,7 @@ The active application targets the `anime` table. It is a local demonstration an
 | Component | Source | Responsibility |
 | --- | --- | --- |
 | Web server | [`server.py`](../server.py) | Render the homepage, accept questions, return SQL and HTML results, reset the database |
-| Database layer | [`src/database.py`](../src/database.py) | Import CSV or legacy JSONL and execute SQL |
+| Database layer | [`src/database.py`](../src/database.py) | Import the CSV into SQLite and execute SQL |
 | Inference engine | [`src/inference.py`](../src/inference.py) | Load a model, apply question rules, generate and postprocess SQL |
 | Browser interface | [`templates/index.html`](../templates/index.html) | Submit JSON requests and display schema, preview, SQL, and results |
 | Synthetic generator | [`scripts/generate_synthetic.py`](../scripts/generate_synthetic.py) | Build domain-specific training and development CSV files |
@@ -112,7 +111,7 @@ Model input is truncated at 512 tokens. Generation uses four beams and a maximum
 
 The tracked source is [`data/animenew.csv`](../data/animenew.csv). The original README attributes it to the [Kaggle Anime Rating Dataset](https://www.kaggle.com/datasets/vishnujg/anime-rating). Dataset licensing and upstream provenance should be confirmed before redistribution beyond the existing project.
 
-`init_database()` reads the CSV with pandas and writes table `anime` to `project_db.sqlite`. It strips surrounding column whitespace and replaces spaces, slashes, and hyphens with underscores. SQLite types are inferred by pandas; the homepage reads actual database types with `PRAGMA table_info`.
+`init_database()` reads the CSV with pandas (14,578 rows) and writes table `anime` to `project_db.sqlite`. It strips surrounding column whitespace and replaces spaces, slashes, and hyphens with underscores. SQLite types are inferred by pandas; the homepage reads actual database types with `PRAGMA table_info`.
 
 ### 2 Dataset schema
 
@@ -165,10 +164,9 @@ source .venv/bin/activate
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m pip install sentencepiece
 ```
 
-The explicit `T5Tokenizer` commonly needs SentencePiece, which is absent from the repository requirements. Core dependencies include PyTorch, Transformers, PEFT, pandas, Flask, and Accelerate. Streamlit is listed but is not the frontend used by `server.py`. Most dependencies are unpinned, so record the resolved versions when establishing a reproducible environment.
+The dependencies are Flask, PyTorch, Transformers, SentencePiece (required by the T5 tokenizer), PEFT, Accelerate, and pandas. The optional `demo.ipynb` additionally needs Jupyter or the VS Code notebook support. Most dependencies are unpinned, so record the resolved versions when establishing a reproducible environment.
 
 ### 4 Initialize the database
 
@@ -214,10 +212,6 @@ python scripts/train_model.py
 | Final output | `models/avgs_t5_wikisql` |
 
 Training merges LoRA weights into the base model before saving the final model and tokenizer. The script does not configure best-checkpoint selection. Its saved final model should not be described as a measured best model. A warmup of 500 steps may exceed the entire training run for this small dataset and should be reviewed before experiments.
-
-### 3 Legacy preprocessing
-
-`scripts/preprocess.py` processes WikiSQL-style JSONL files when supplied separately. Those files are not tracked. Its condition-bearing SQL is assembled with `WHERE` before `FROM`, which is invalid SQL. Use the anime synthetic generator for the documented active workflow; repair and validate the legacy converter before relying on it.
 
 ## VI Program Execution and Usage
 
@@ -320,7 +314,7 @@ The project separates database access, inference, training, and presentation int
 | --- | --- |
 | Missing CSV or no anime table | Confirm the working directory and tracked CSV, then run `python -m src.database` |
 | Local model fails to load | The engine attempts fallback; check network access, cache availability, and the reported model path |
-| Tokenizer dependency error | Install SentencePiece in the active environment and restart the process |
+| Tokenizer dependency error | Reinstall `requirements.txt` (it includes SentencePiece) in the active environment and restart the process |
 | Missing processed training data | Run `python scripts/generate_synthetic.py` before training |
 | Trainer or tokenizer API error | Check installed library versions against the APIs used in the training script |
 | Empty results | Inspect the SQL, actual column values, title spelling, and NULL values |
@@ -362,7 +356,6 @@ AskSQL/
 |-- docs/PROJECT_REPORT.md
 |-- scripts/
 |   |-- generate_synthetic.py
-|   |-- preprocess.py
 |   |-- test_project.py
 |   `-- train_model.py
 |-- src/

@@ -79,7 +79,7 @@ def train():
     dev_path = os.path.join(DATA_DIR, 'dev_processed.csv')
     
     if not os.path.exists(train_path):
-        raise FileNotFoundError(f"Processed training data not found at {train_path}. Run preprocess.py first.")
+        raise FileNotFoundError(f"Processed training data not found at {train_path}. Run scripts/generate_synthetic.py first.")
         
     train_dataset = WikiSQLDataset(train_path, tokenizer, MAX_INPUT_LENGTH, MAX_TARGET_LENGTH)
     eval_dataset = WikiSQLDataset(dev_path, tokenizer, MAX_INPUT_LENGTH, MAX_TARGET_LENGTH) if os.path.exists(dev_path) else None
